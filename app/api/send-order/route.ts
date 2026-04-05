@@ -1,4 +1,6 @@
 import { Resend } from "resend"
+import { sendOrderToTelegram } from "@/lib/telegram"
+import { getOrders } from "@/lib/orders-data"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 
@@ -160,39 +162,44 @@ export async function POST(request: Request) {
       console.log("Order details:", order)
     }
 
-    // Сохраняем заказ в систему для админки
-    try {
-      const orderForStorage = {
-        name: order.name,
-        phone: order.phone,
-        city: order.city,
-        street: order.street,
-        building: order.building,
-        apartment: order.apartment,
-        entrance: order.entrance,
-        floor: order.floor,
-        comment: order.comment,
-        paymentMethod: order.paymentMethod,
-        items: order.items,
-        total: order.total,
-        deliveryFee: order.deliveryFee,
-      }
+    // Отправляем уведомление в Telegram
+    const telegramSent = await sendOrderToTelegram({
+      name: order.name,
+      phone: order.phone,
+      city: order.city,
+      street: order.street,
+      building: order.building,
+      apartment: order.apartment,
+      entrance: order.entrance,
+      floor: order.floor,
+      comment: order.comment,
+      paymentMethod: order.paymentMethod,
+      items: order.items,
+      total: order.total,
+      deliveryFee: order.deliveryFee,
+    })
 
-      // Отправляем заказ в наш API для сохранения
-      const saveResponse = await fetch(`${new URL(request.url).origin}/api/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderForStorage),
-      })
-
-      if (!saveResponse.ok) {
-        console.error("Failed to save order to admin system")
-        // Не прерываем выполнение, если не удалось сохранить в админку
-      }
-    } catch (saveError) {
-      console.error("Error saving order to admin system:", saveError)
-      // Не прерываем выполнение, если не удалось сохранить в админку
+    if (!telegramSent) {
+      console.log("Telegram notification skipped - not configured")
     }
+
+    // Сохраняем заказ в систему для админки
+    const orders = getOrders()
+    const newOrder = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 5).toUpperCase(),
+      customerName: order.name,
+      customerPhone: order.phone,
+      address: addressParts.join(", "),
+      items: order.items,
+      total: order.total,
+      deliveryFee: order.deliveryFee,
+      status: "pending",
+      paymentMethod: order.paymentMethod,
+      comment: order.comment,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    orders.unshift(newOrder)
 
     return Response.json({ success: true, message: "Order received successfully" })
   } catch (error) {
