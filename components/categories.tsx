@@ -1,8 +1,9 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { cn } from "@/lib/utils"
 
-const categories = [
+const defaultCategories = [
   { id: "all", name: "Все", emoji: "🍽️" },
   { id: "pizza", name: "Пицца", emoji: "🍕" },
   { id: "burgers", name: "Бургеры", emoji: "🍔" },
@@ -12,12 +13,33 @@ const categories = [
   { id: "drinks", name: "Напитки", emoji: "🥤" },
 ]
 
+interface Category {
+  id: string
+  name: string
+  emoji: string
+}
+
 interface CategoriesProps {
   activeCategory: string
   onCategoryChange: (category: string) => void
 }
 
 export function Categories({ activeCategory, onCategoryChange }: CategoriesProps) {
+  const [categories, setCategories] = useState<Category[]>(defaultCategories)
+
+  useEffect(() => {
+    fetch("/api/categories")
+      .then((res) => res.json())
+      .then((data) => {
+        // Добавляем "Все" в начало
+        const allCategory = { id: "all", name: "Все", emoji: "🍽️" }
+        setCategories([allCategory, ...data])
+      })
+      .catch(() => {
+        // Используем категории по умолчанию при ошибке
+      })
+  }, [])
+
   return (
     <div className="flex flex-wrap gap-3 justify-center">
       {categories.map((category) => (

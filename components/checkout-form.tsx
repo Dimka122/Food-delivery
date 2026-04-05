@@ -2,13 +2,19 @@
 
 import React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { ArrowLeft, MapPin, User, Phone, CreditCard, Clock, CheckCircle2 } from "lucide-react"
-import { menuItems, type FoodItem } from "./menu-section"
+
+interface FoodItem {
+  id: number
+  name: string
+  price: number
+  image: string
+}
 
 interface CheckoutFormProps {
   cart: Record<number, number>
@@ -44,13 +50,23 @@ export function CheckoutForm({ cart, onBack, onOrderComplete }: CheckoutFormProp
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [menuItems, setMenuItems] = useState<FoodItem[]>([])
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setMenuItems(data))
+      .catch(() => {})
+  }, [])
 
   const cartItems = Object.entries(cart)
     .filter(([, qty]) => qty > 0)
     .map(([id, quantity]) => {
-      const item = menuItems.find((i) => i.id === Number(id)) as FoodItem
+      const item = menuItems.find((i) => i.id === Number(id))
+      if (!item) return null
       return { ...item, quantity }
     })
+    .filter(Boolean) as (FoodItem & { quantity: number })[]
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const deliveryFee = total >= 1000 ? 0 : 199

@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { menuItems } from "@/lib/menu-data"
-
-declare global {
-  var __orders__: any[] | undefined
-}
+import { getOrders } from "@/lib/orders-data"
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const period = searchParams.get("period") || "7d" // 7d, 30d, 90d
     
-    if (!global.__orders__) {
-      global.__orders__ = []
-    }
-    
-    const orders = global.__orders__
+    const orders = getOrders()
     
     // Фильтрация по периоду
     const days = period === "7d" ? 7 : period === "30d" ? 30 : 90

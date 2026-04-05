@@ -1,10 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { X, Plus, Minus, ShoppingBag, Trash2 } from "lucide-react"
-import { menuItems, type FoodItem } from "./menu-section"
 import { CheckoutForm } from "./checkout-form"
+
+interface FoodItem {
+  id: number
+  name: string
+  price: number
+  image: string
+}
 
 interface CartDrawerProps {
   isOpen: boolean
@@ -24,13 +30,23 @@ export function CartDrawer({
   onClearCart,
 }: CartDrawerProps) {
   const [showCheckout, setShowCheckout] = useState(false)
+  const [menuItems, setMenuItems] = useState<FoodItem[]>([])
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => setMenuItems(data))
+      .catch(() => {})
+  }, [])
 
   const cartItems = Object.entries(cart)
     .filter(([, qty]) => qty > 0)
     .map(([id, quantity]) => {
-      const item = menuItems.find((i) => i.id === Number(id)) as FoodItem
+      const item = menuItems.find((i) => i.id === Number(id))
+      if (!item) return null
       return { ...item, quantity }
     })
+    .filter(Boolean) as (FoodItem & { quantity: number })[]
 
   const total = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
   const deliveryFee = total >= 1000 ? 0 : 199

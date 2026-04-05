@@ -1,63 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-
-// Глобальное хранение заказов (в памяти)
-// В реальном приложении используйте базу данных
-declare global {
-  var __orders__: any[] | undefined
-}
-
-// Инициализация массива заказов с тестовыми данными
-if (!global.__orders__) {
-  global.__orders__ = [
-    {
-      id: "ORD-001",
-      customerName: "Иван Иванов",
-      customerPhone: "+380501234567",
-      address: "Киев, ул. Десантная, 5, кв. 12",
-      items: [
-        { name: "Пепперони", price: 350, quantity: 2 },
-        { name: "Цезарь", price: 180, quantity: 1 },
-      ],
-      total: 880,
-      deliveryFee: 50,
-      status: "pending",
-      paymentMethod: "cash",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: "ORD-002",
-      customerName: "Мария Петрова",
-      customerPhone: "+380671234567",
-      address: "Киев, ул. Садовая, 10",
-      items: [
-        { name: "Гавайская", price: 320, quantity: 1 },
-        { name: "Кола", price: 50, quantity: 2 },
-      ],
-      total: 420,
-      deliveryFee: 0,
-      status: "preparing",
-      paymentMethod: "card",
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      id: "ORD-003",
-      customerName: "Алексей Сидоров",
-      customerPhone: "+380931234567",
-      address: "Киев, пр. Победы, 25",
-      items: [
-        { name: "Четыре сыра", price: 450, quantity: 1 },
-      ],
-      total: 450,
-      deliveryFee: 50,
-      status: "delivering",
-      paymentMethod: "cash",
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      updatedAt: new Date().toISOString(),
-    },
-  ]
-}
+import { getOrders } from "@/lib/orders-data"
 
 // Типы для заказов
 type OrderStatus = "pending" | "confirmed" | "preparing" | "ready" | "delivering" | "delivered" | "cancelled"
@@ -106,7 +48,8 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search")
     const limit = parseInt(searchParams.get("limit") || "50")
     
-    let orders = global.__orders__ || []
+    // Копируем массив, чтобы не мутировать оригинал
+    let orders = [...getOrders()]
     
     // Фильтрация по статусу
     if (status && status !== "all") {
@@ -162,11 +105,8 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date().toISOString(),
     }
     
-    // Добавляем заказ в глобальное хранилище
-    if (!global.__orders__) {
-      global.__orders__ = []
-    }
-    global.__orders__.unshift(newOrder)
+    const orders = getOrders()
+    orders.unshift(newOrder)
     
     return NextResponse.json(newOrder, { status: 201 })
   } catch (error) {
