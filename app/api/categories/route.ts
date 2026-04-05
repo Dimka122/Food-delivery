@@ -1,10 +1,10 @@
-import { categories } from "@/components/categories"
+import { categories, Category } from "@/lib/categories-data"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
     // Фильтруем категорию "Все" для админки
-    const adminCategories = categories.filter(cat => cat.id !== "all")
+    const adminCategories = categories.filter((cat: Category) => cat.id !== "all")
     
     return NextResponse.json(adminCategories)
   } catch (error) {
@@ -15,10 +15,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const newCategory = await request.json()
+    const newCategory = await request.json() as Category
     
     // Проверяем уникальность ID
-    const exists = categories.find(cat => cat.id === newCategory.id)
+    const exists = categories.find((cat: Category) => cat.id === newCategory.id)
     if (exists) {
       return NextResponse.json({ error: "Category ID already exists" }, { status: 400 })
     }
@@ -34,10 +34,10 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const updatedCategory = await request.json()
+    const updatedCategory = await request.json() as Category
     const { id } = updatedCategory
     
-    const index = categories.findIndex(cat => cat.id === id)
+    const index = categories.findIndex((cat: Category) => cat.id === id)
     if (index === -1) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 })
     }
@@ -60,7 +60,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Cannot delete 'all' category" }, { status: 400 })
     }
     
-    const index = categories.findIndex(cat => cat.id === id)
+    const index = categories.findIndex((cat: Category) => cat.id === id)
     if (index === -1) {
       return NextResponse.json({ error: "Category not found" }, { status: 404 })
     }

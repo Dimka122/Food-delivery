@@ -1,8 +1,17 @@
-import { menuItems } from "@/components/menu-section"
+import { menuItems as staticMenuItems } from "@/lib/menu-data"
 import { NextRequest, NextResponse } from "next/server"
 
-// Временное хранение данных (в реальном приложении используйте базу данных)
-let orders: any[] = []
+declare global {
+  var __menuItems__: any[] | undefined
+}
+
+// Инициализация при первом запросе
+function getMenuItems() {
+  if (!global.__menuItems__) {
+    global.__menuItems__ = [...staticMenuItems]
+  }
+  return global.__menuItems__
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -10,6 +19,7 @@ export async function GET(request: NextRequest) {
     const category = searchParams.get("category")
     const search = searchParams.get("search")
     
+    const menuItems = getMenuItems()
     let filteredItems = menuItems
 
     if (category && category !== "all") {
@@ -33,12 +43,12 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const newItem = await request.json()
+    const menuItems = getMenuItems()
     
-    // Добавляем ID к новому товару
     const itemWithId = {
       ...newItem,
-      id: Math.max(...menuItems.map(item => item.id)) + 1,
-      rating: 4.5 // По умолчанию
+      id: Math.max(...menuItems.map(item => item.id), 0) + 1,
+      rating: 4.5
     }
     
     menuItems.push(itemWithId)
@@ -54,6 +64,7 @@ export async function PUT(request: NextRequest) {
   try {
     const updatedItem = await request.json()
     const { id } = updatedItem
+    const menuItems = getMenuItems()
     
     const index = menuItems.findIndex(item => item.id === id)
     if (index === -1) {
@@ -73,6 +84,7 @@ export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const id = parseInt(searchParams.get("id") || "0")
+    const menuItems = getMenuItems()
     
     const index = menuItems.findIndex(item => item.id === id)
     if (index === -1) {

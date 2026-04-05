@@ -20,6 +20,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const { id } = params
     const { status } = await request.json()
     
+    // Инициализация если нет данных
     if (!global.__orders__) {
       global.__orders__ = []
     }
@@ -31,21 +32,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
     
     const currentOrder = global.__orders__[orderIndex]
-    const currentStatus = currentOrder.status as keyof typeof ORDER_STATUSES
-    const newStatus = status as keyof typeof ORDER_STATUSES
     
-    // Проверяем валидность перехода статуса
-    const validNextStatuses = ORDER_STATUSES[currentStatus]?.next || []
-    if (!validNextStatuses.includes(newStatus)) {
-      return NextResponse.json({ 
-        error: `Cannot change status from ${ORDER_STATUSES[currentStatus].label} to ${ORDER_STATUSES[newStatus].label}` 
-      }, { status: 400 })
-    }
-    
-    // Обновляем статус и время
+    // Обновляем статус без проверки переходов (для админки)
     global.__orders__[orderIndex] = {
       ...currentOrder,
-      status: newStatus,
+      status: status,
       updatedAt: new Date().toISOString(),
     }
     

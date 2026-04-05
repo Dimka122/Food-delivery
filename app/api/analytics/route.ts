@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { menuItems } from "@/components/menu-section"
+import { menuItems } from "@/lib/menu-data"
 
 declare global {
   var __orders__: any[] | undefined
